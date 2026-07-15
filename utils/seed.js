@@ -5,7 +5,7 @@
  *  - a platform owner account (PLATFORM_OWNER_*) with no organization, for the Super Admin panel
  */
 require('dotenv').config();
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { pool, getClient } = require('../config/db');
 const UserModel = require('../models/userModel');
 const OrganizationModel = require('../models/organizationModel');
