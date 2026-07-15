@@ -22,6 +22,7 @@ const reportRoutes = require('./routes/reportRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const platformRoutes = require('./routes/platformRoutes');
 const activityRoutes = require('./routes/activityRoutes');
+const blogRoutes = require('./routes/blogRoutes');
 
 const app = express();
 
@@ -67,6 +68,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/platform', platformRoutes);
 app.use('/api/activity', activityRoutes);
+app.use('/api/blog', blogRoutes);
 
 // ---- 404 + error handling (must be last) ----
 app.use(notFound);
