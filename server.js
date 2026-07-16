@@ -11,17 +11,16 @@ const { pool } = require('./config/db');
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
+  app.listen(PORT, () => {
+    console.log(`🚀 ERP API server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+  });
+
+  // Verify DB connectivity after binding (don't block startup or crash on timeout)
   try {
     await pool.query('SELECT 1');
     console.log('✅ Connected to PostgreSQL (Supabase)');
-
-    app.listen(PORT, () => {
-      console.log(`🚀 ERP API server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
-    });
   } catch (err) {
-    console.error('❌ Failed to start server:', err.message || err);
-    console.error(err.stack || err);
-    process.exit(1);
+    console.error('⚠️  DB health check failed (server still running):', err.message);
   }
 };
 
