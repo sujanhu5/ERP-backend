@@ -83,8 +83,24 @@ const UserModel = {
     return res.rows[0];
   },
 
-  async updatePassword(id, passwordHash) {
-    await query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, id]);
+  async updatePassword(id, passwordHash, byAdmin = false) {
+    await query(
+      'UPDATE users SET password_hash = $1, password_changed_by_admin = $2, refresh_token = NULL WHERE id = $3',
+      [passwordHash, byAdmin, id]
+    );
+  },
+
+  async clearAdminPasswordFlag(id) {
+    await query('UPDATE users SET password_changed_by_admin = FALSE WHERE id = $1', [id]);
+  },
+
+  async listByOrganization(organizationId) {
+    const res = await query(
+      `SELECT id, name, email, role, is_active, last_login, created_at
+       FROM users WHERE organization_id = $1 ORDER BY created_at ASC`,
+      [organizationId]
+    );
+    return res.rows;
   },
 
   async delete(id, organizationId) {

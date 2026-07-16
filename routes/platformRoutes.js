@@ -14,8 +14,10 @@ router.get('/audit-logs', platformController.getAuditLogs);
 
 router.get('/companies', platformController.getCompanies);
 router.get('/companies/:id', platformController.getCompanyById);
+router.get('/companies/:id/users', platformController.getCompanyUsers);
 router.patch('/companies/:id/status', platformController.updateCompanyStatus);
 router.post('/companies/:id/reset-password', platformController.resetCompanyPassword);
 router.delete('/companies/:id', platformController.deleteCompany);
+router.put('/users/:userId/password', platformController.setUserPassword);
 
 module.exports = router;

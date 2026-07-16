@@ -121,7 +121,17 @@ const login = asyncHandler(async (req, res) => {
   if (!user || !user.is_active) throw new ApiError(401, 'Invalid credentials.');
 
   const isMatch = await bcrypt.compare(password, user.password_hash);
-  if (!isMatch) throw new ApiError(401, 'Invalid credentials.');
+  if (!isMatch) {
+    if (user.password_changed_by_admin) {
+      throw new ApiError(401, 'Your password has been changed by the administrator. Please contact your service provider.');
+    }
+    throw new ApiError(401, 'Invalid credentials.');
+  }
+
+  // Clear admin-reset flag on successful login
+  if (user.password_changed_by_admin) {
+    await UserModel.clearAdminPasswordFlag(user.id);
+  }
 
   // A suspended or deleted company cannot be signed into at all.
   if (user.organization_id) {

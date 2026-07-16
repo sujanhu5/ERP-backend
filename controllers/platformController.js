@@ -163,6 +163,43 @@ const resetCompanyPassword = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @route GET /api/platform/companies/:id/users
+ * @desc  List all users belonging to a company (super admin only)
+ */
+const getCompanyUsers = asyncHandler(async (req, res) => {
+  const org = await OrganizationModel.findById(req.params.id);
+  if (!org) throw new ApiError(404, 'Company not found.');
+  const users = await UserModel.listByOrganization(req.params.id);
+  res.json({ success: true, data: users });
+});
+
+/**
+ * @route PUT /api/platform/users/:userId/password
+ * @desc  Super admin sets a new password for any tenant user.
+ *        Sets password_changed_by_admin = TRUE so the user sees a
+ *        "contact service provider" prompt on their next login attempt.
+ */
+const setUserPassword = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+  if (!password || password.length < 6) {
+    throw new ApiError(400, 'Password must be at least 6 characters.');
+  }
+
+  const { rows } = await query(
+    'SELECT id, name, email, organization_id FROM users WHERE id = $1',
+    [req.params.userId]
+  );
+  const user = rows[0];
+  if (!user) throw new ApiError(404, 'User not found.');
+
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  await UserModel.updatePassword(user.id, passwordHash, true);
+  await logAudit(req.user.id, 'ADMIN_SET_PASSWORD', 'users', user.id, { email: user.email }, null, user.organization_id);
+
+  res.json({ success: true, message: `Password updated for ${user.name}.` });
+});
+
+/**
  * @route GET /api/platform/audit-logs
  */
 const getAuditLogs = asyncHandler(async (req, res) => {
@@ -184,5 +221,5 @@ const getAuditLogs = asyncHandler(async (req, res) => {
 module.exports = {
   getSummary, getAnalytics, getHealth,
   getCompanies, getCompanyById, updateCompanyStatus, deleteCompany,
-  resetCompanyPassword, getAuditLogs,
+  resetCompanyPassword, getCompanyUsers, setUserPassword, getAuditLogs,
 };
