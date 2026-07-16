@@ -48,6 +48,10 @@ admin.delete('/categories/:id',     catCtrl.remove);
 admin.get('/tags',                  tagCtrl.list);
 admin.delete('/tags/:id',           tagCtrl.remove);
 
+// Comment management
+admin.get('/posts/:id/comments',    blogCtrl.adminGetPostComments);
+admin.delete('/comments/:id',       blogCtrl.deleteComment);
+
 // Media library
 admin.get('/images',                blogCtrl.listImages);
 admin.post('/images',

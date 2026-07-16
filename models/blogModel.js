@@ -34,7 +34,7 @@ function estimateReadingTime(html = '') {
 
 const BLOG_SELECT = `
   b.*,
-  u.name  AS author_name,
+  COALESCE(b.author_display_name, u.name) AS author_name,
   u.email AS author_email,
   bc.name  AS category_name,
   bc.slug  AS category_slug,
@@ -111,22 +111,22 @@ const BlogModel = {
     return res.rows[0] || null;
   },
 
-  async create({ title, excerpt, content, contentJson, featuredImage, authorId, categoryId,
+  async create({ title, excerpt, content, contentJson, featuredImage, authorId, authorDisplayName, categoryId,
     status, isPinned, isFeatured, publishedAt, scheduledAt,
     metaTitle, metaDescription, focusKeyword, tags = [] }) {
     const slug = await uniqueBlogSlug(title);
     const { minutes, words } = estimateReadingTime(content || '');
     const res = await query(
       `INSERT INTO blogs
-         (title, slug, excerpt, content, content_json, featured_image, author_id, category_id,
+         (title, slug, excerpt, content, content_json, featured_image, author_id, author_display_name, category_id,
           status, is_pinned, is_featured, published_at, scheduled_at,
           meta_title, meta_description, focus_keyword, reading_time_minutes, word_count)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
        RETURNING *`,
       [
         title.trim(), slug, excerpt || null, content || null,
         contentJson ? JSON.stringify(contentJson) : null,
-        featuredImage || null, authorId || null, categoryId || null,
+        featuredImage || null, authorId || null, authorDisplayName || null, categoryId || null,
         status || 'draft', isPinned || false, isFeatured || false,
         publishedAt || (status === 'published' ? new Date() : null),
         scheduledAt || null,
@@ -146,6 +146,7 @@ const BlogModel = {
     const {
       title = existing.title, excerpt = existing.excerpt,
       content = existing.content, contentJson, featuredImage,
+      authorDisplayName,
       categoryId = existing.category_id, status = existing.status,
       isPinned = existing.is_pinned, isFeatured = existing.is_featured,
       publishedAt, scheduledAt, metaTitle, metaDescription, focusKeyword,
@@ -161,15 +162,16 @@ const BlogModel = {
     await query(
       `UPDATE blogs SET
          title=$1, excerpt=$2, content=$3, content_json=$4, featured_image=$5,
-         category_id=$6, status=$7, is_pinned=$8, is_featured=$9,
-         published_at=$10, scheduled_at=$11,
-         meta_title=$12, meta_description=$13, focus_keyword=$14,
-         reading_time_minutes=$15, word_count=$16, updated_at=NOW()
-       WHERE id=$17`,
+         author_display_name=$6, category_id=$7, status=$8, is_pinned=$9, is_featured=$10,
+         published_at=$11, scheduled_at=$12,
+         meta_title=$13, meta_description=$14, focus_keyword=$15,
+         reading_time_minutes=$16, word_count=$17, updated_at=NOW()
+       WHERE id=$18`,
       [
         title.trim(), excerpt || null, content || null,
         contentJson !== undefined ? (contentJson ? JSON.stringify(contentJson) : null) : existing.content_json,
         featuredImage !== undefined ? featuredImage : existing.featured_image,
+        authorDisplayName !== undefined ? (authorDisplayName || null) : existing.author_display_name,
         categoryId || null, status, isPinned, isFeatured,
         resolvedPublishedAt,
         scheduledAt !== undefined ? scheduledAt : existing.scheduled_at,

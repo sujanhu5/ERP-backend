@@ -51,6 +51,7 @@ const adminGetById = asyncHandler(async (req, res) => {
 const adminCreate = asyncHandler(async (req, res) => {
   const {
     title, excerpt, content, contentJson, featuredImage, categoryId,
+    authorDisplayName,
     status, isPinned, isFeatured, publishedAt, scheduledAt,
     metaTitle, metaDescription, focusKeyword, tags,
   } = req.body;
@@ -62,6 +63,7 @@ const adminCreate = asyncHandler(async (req, res) => {
     contentJson: contentJson ? JSON.parse(contentJson) : undefined,
     featuredImage: req.uploadedUrl || featuredImage,
     authorId: req.user.id,
+    authorDisplayName: authorDisplayName?.trim() || null,
     categoryId: categoryId || null,
     status: status || 'draft',
     isPinned: isPinned === 'true' || isPinned === true,
@@ -81,6 +83,7 @@ const adminUpdate = asyncHandler(async (req, res) => {
 
   const {
     title, excerpt, content, contentJson, featuredImage, categoryId,
+    authorDisplayName,
     status, isPinned, isFeatured, publishedAt, scheduledAt,
     metaTitle, metaDescription, focusKeyword, tags,
   } = req.body;
@@ -89,6 +92,7 @@ const adminUpdate = asyncHandler(async (req, res) => {
     title, excerpt, content,
     contentJson: contentJson ? JSON.parse(contentJson) : undefined,
     featuredImage: req.uploadedUrl || featuredImage,
+    authorDisplayName: authorDisplayName !== undefined ? (authorDisplayName?.trim() || null) : undefined,
     categoryId: categoryId || null,
     status,
     isPinned: isPinned === 'true' || isPinned === true,
@@ -170,6 +174,21 @@ const getComments = asyncHandler(async (req, res) => {
   res.json({ success: true, data: rows });
 });
 
+const adminGetPostComments = asyncHandler(async (req, res) => {
+  const { rows } = await query(
+    `SELECT id, name, content, is_approved, created_at
+     FROM blog_comments WHERE blog_id = $1
+     ORDER BY created_at DESC`,
+    [req.params.id]
+  );
+  res.json({ success: true, data: rows });
+});
+
+const deleteComment = asyncHandler(async (req, res) => {
+  await query('DELETE FROM blog_comments WHERE id = $1', [req.params.id]);
+  res.json({ success: true, message: 'Comment deleted.' });
+});
+
 const addComment = asyncHandler(async (req, res) => {
   const blog = await BlogModel.findBySlug(req.params.slug);
   if (!blog) throw new ApiError(404, 'Post not found.');
@@ -188,6 +207,7 @@ const addComment = asyncHandler(async (req, res) => {
 module.exports = {
   listPublic, getPublicPost, toggleLike,
   getComments, addComment,
+  adminGetPostComments, deleteComment,
   adminList, adminGetById, adminCreate, adminUpdate, adminDelete, adminBulkAction, adminStats,
   uploadImage, listImages, deleteImage,
 };
