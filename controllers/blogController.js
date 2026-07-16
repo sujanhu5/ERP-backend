@@ -154,8 +154,41 @@ const deleteImage = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Image deleted.' });
 });
 
+// ── Public comments ──────────────────────────────────────────────────────────
+
+const getComments = asyncHandler(async (req, res) => {
+  const { db } = require('../config/db');
+  const blog = await BlogModel.findBySlug(req.params.slug);
+  if (!blog) throw new ApiError(404, 'Post not found.');
+  const { rows } = await db.query(
+    `SELECT id, name, content, created_at
+     FROM blog_comments
+     WHERE blog_id = $1 AND is_approved = TRUE
+     ORDER BY created_at ASC`,
+    [blog.id]
+  );
+  res.json({ success: true, data: rows });
+});
+
+const addComment = asyncHandler(async (req, res) => {
+  const { db } = require('../config/db');
+  const blog = await BlogModel.findBySlug(req.params.slug);
+  if (!blog) throw new ApiError(404, 'Post not found.');
+  const { name, content } = req.body;
+  if (!name?.trim())    throw new ApiError(400, 'Name is required.');
+  if (!content?.trim()) throw new ApiError(400, 'Comment cannot be empty.');
+  const { rows } = await db.query(
+    `INSERT INTO blog_comments (blog_id, name, content, is_approved)
+     VALUES ($1, $2, $3, TRUE)
+     RETURNING id, name, content, created_at`,
+    [blog.id, name.trim().slice(0, 100), content.trim().slice(0, 2000)]
+  );
+  res.status(201).json({ success: true, data: rows[0] });
+});
+
 module.exports = {
   listPublic, getPublicPost, toggleLike,
+  getComments, addComment,
   adminList, adminGetById, adminCreate, adminUpdate, adminDelete, adminBulkAction, adminStats,
   uploadImage, listImages, deleteImage,
 };

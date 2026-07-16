@@ -9,11 +9,13 @@ const { upload, persistUpload } = require('../middleware/uploadMiddleware');
 
 // ── Public routes ──────────────────────────────────────────────────────────
 // All published blog data — no auth required
-router.get('/public/posts',         blogCtrl.listPublic);
-router.get('/public/posts/:slug',   blogCtrl.getPublicPost);
-router.post('/public/posts/:slug/like', blogCtrl.toggleLike);
-router.get('/public/categories',    catCtrl.list);
-router.get('/public/tags',          tagCtrl.list);
+router.get('/public/posts',                       blogCtrl.listPublic);
+router.get('/public/posts/:slug',                 blogCtrl.getPublicPost);
+router.post('/public/posts/:slug/like',           blogCtrl.toggleLike);
+router.get('/public/posts/:slug/comments',        blogCtrl.getComments);
+router.post('/public/posts/:slug/comments',       blogCtrl.addComment);
+router.get('/public/categories',                  catCtrl.list);
+router.get('/public/tags',                        tagCtrl.list);
 
 // ── Platform-owner-only routes ─────────────────────────────────────────────
 const admin = express.Router();
